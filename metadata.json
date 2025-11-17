@@ -1,0 +1,5 @@
+{
+  "name": "PostX",
+  "description": "An application that generates social media posts in Egyptian Arabic, with options for style training and AI-powered image suggestions.",
+  "requestFramePermissions": []
+}
