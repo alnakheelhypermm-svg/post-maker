@@ -4,6 +4,7 @@ import TextArea from './components/TextArea';
 import Button from './components/Button';
 import PostCard from './components/PostCard';
 import ImageSuggestion from './components/ImageSuggestion';
+import type { Logo } from './components/ImageSuggestion';
 import Loader from './components/Loader';
 import Icon from './components/Icon';
 import TrainingModal from './components/TrainingModal';
@@ -72,7 +73,13 @@ function App() {
     }
   };
 
-  const handleGenerateImage = async (imageGenPrompt: string, style: ImageStyle, aspectRatio: AspectRatio, model: ImageModel) => {
+  const handleGenerateImage = async (
+    imageGenPrompt: string, 
+    style: ImageStyle, 
+    aspectRatio: AspectRatio, 
+    model: ImageModel,
+    logo: (Logo & { position: 'on_product' | 'corner' }) | null
+  ) => {
     if (!imageGenPrompt.trim() || !result) return;
 
     setIsImageLoading(true);
@@ -80,7 +87,13 @@ function App() {
     setGeneratedImage('');
 
     try {
-      const imageB64 = await generateImage(imageGenPrompt, style, aspectRatio, model);
+      const logoDetails = logo ? {
+          data: logo.dataUrl.split(',')[1],
+          mimeType: logo.mimeType,
+          position: logo.position,
+      } : undefined;
+
+      const imageB64 = await generateImage(imageGenPrompt, style, aspectRatio, model, logoDetails);
       const fullImageUrl = `data:image/jpeg;base64,${imageB64}`;
       setGeneratedImage(fullImageUrl);
 

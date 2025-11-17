@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import type { AspectRatio, GeneratedContent, ImageStyle, ImageModel } from '../types';
 
@@ -84,11 +83,44 @@ Generate the 2 posts and the image prompt.
   }
 };
 
-export const generateImage = async (prompt: string, style: ImageStyle, aspectRatio: AspectRatio, model: ImageModel): Promise<string> => {
-    const fullPrompt = `${prompt}, in the style of ${style}.`;
+interface LogoDetails {
+  data: string; // base64 string
+  mimeType: string;
+  position: 'on_product' | 'corner';
+}
 
+export const generateImage = async (prompt: string, style: ImageStyle, aspectRatio: AspectRatio, model: ImageModel, logo?: LogoDetails): Promise<string> => {
     try {
-        if (model === 'gemini-2.5-flash-image') {
+        if (logo) {
+            const positionInstruction = logo.position === 'on_product' 
+                ? 'Place this logo naturally and realistically onto the main subject of the image.'
+                : 'Place this logo discreetly in one of the corners of the image as a watermark.';
+            
+            const imageEditPrompt = `${prompt}, in the style of ${style}. ${positionInstruction}`;
+
+            const logoPart = {
+                inlineData: {
+                    data: logo.data,
+                    mimeType: logo.mimeType,
+                },
+            };
+            const textPart = { text: imageEditPrompt };
+            
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash-image', // Must use this model for image editing
+                contents: { parts: [logoPart, textPart] },
+                config: {
+                    responseModalities: [Modality.IMAGE],
+                },
+            });
+             const imagePart = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData);
+            if (imagePart?.inlineData) {
+                return imagePart.inlineData.data;
+            } else {
+                throw new Error("No image data found in image editing response.");
+            }
+        } else if (model === 'gemini-2.5-flash-image') {
+            const fullPrompt = `${prompt}, in the style of ${style}.`;
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash-image',
                 contents: { parts: [{ text: fullPrompt }] },
@@ -104,6 +136,7 @@ export const generateImage = async (prompt: string, style: ImageStyle, aspectRat
                 throw new Error("No image data found in gemini-2.5-flash-image response.");
             }
         } else { // Default to 'imagen-4.0-generate-001'
+            const fullPrompt = `${prompt}, in the style of ${style}.`;
             const response = await ai.models.generateImages({
                 model: 'imagen-4.0-generate-001',
                 prompt: fullPrompt,
@@ -125,6 +158,7 @@ export const generateImage = async (prompt: string, style: ImageStyle, aspectRat
         throw new Error("Failed to generate image from API.");
     }
 };
+
 
 export const refinePost = async (postText: string, instruction: string): Promise<string> => {
   const model = "gemini-2.5-pro";

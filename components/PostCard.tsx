@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Icon from './Icon';
 import Loader from './Loader';

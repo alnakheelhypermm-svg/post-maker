@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 type IconName = 'sparkles' | 'copy' | 'image' | 'brain' | 'lightbulb' | 'history';
